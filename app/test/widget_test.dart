@@ -13,8 +13,10 @@ import 'test_helpers.dart';
 void main() {
   testWidgets('App boots to the dashboard', (tester) async {
     ignoreOverflowErrors();
+    useMockBackend();
     await tester.pumpWidget(const BetterTrackApp());
-    await tester.pump();
+    await tester.pump(); // initial frame (spinner)
+    await tester.pump(const Duration(milliseconds: 50)); // mock resolves
     expect(find.text('Hello, Sam'), findsOneWidget);
     expect(find.text('Budgets'), findsOneWidget);
   });

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../models/models.dart';
+import '../services/repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/async_view.dart';
 
 /// AI Assistant chat. Lives inside group chat (mention @BetterTrack) but also
 /// opens standalone from the dashboard / FAB. [embedded] hides the AppBar.
 class AiChatScreen extends StatefulWidget {
   final bool embedded;
-  const AiChatScreen({super.key, this.embedded = false});
+  final String? groupId;
+  const AiChatScreen({super.key, this.embedded = false, this.groupId});
 
   @override
   State<AiChatScreen> createState() => _AiChatScreenState();
@@ -17,28 +20,52 @@ class AiChatScreen extends StatefulWidget {
 
 class _AiChatScreenState extends State<AiChatScreen> {
   final _controller = TextEditingController();
+  final _scroll = ScrollController();
   late final List<ChatMessage> _messages = List.of(MockData.chat);
+  bool _sending = false;
 
   @override
   void dispose() {
     _controller.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
-  void _send() {
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(_scroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      }
+    });
+  }
+
+  Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _sending) return;
     setState(() {
       _messages.add(ChatMessage(ChatRole.user, text, time: 'now'));
-      // Stubbed assistant reply — real call goes to the FastAPI /ai endpoint.
-      _messages.add(const ChatMessage(
-        ChatRole.ai,
-        'Got it! Once the backend API key is set, I\'ll parse this and draft '
-        'the expense for you to confirm.',
-        time: 'now',
-      ));
       _controller.clear();
+      _sending = true; // shows the typing indicator
     });
+    _scrollToEnd();
+    try {
+      final reply =
+          await Repository.instance.aiChat(text, groupId: widget.groupId);
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(ChatRole.ai, reply, time: 'now'));
+        _sending = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(ChatRole.system, e.toString()));
+        _sending = false;
+      });
+      showFailure(context, e.toString());
+    }
+    _scrollToEnd();
   }
 
   @override
@@ -47,13 +74,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
       children: [
         Expanded(
           child: ListView.builder(
-            reverse: false,
+            controller: _scroll,
             padding: const EdgeInsets.all(AppSpacing.x16),
-            itemCount: _messages.length,
-            itemBuilder: (_, i) => _Bubble(message: _messages[i]),
+            itemCount: _messages.length + (_sending ? 1 : 0),
+            itemBuilder: (_, i) {
+              if (i == _messages.length) return const _TypingBubble();
+              return _Bubble(message: _messages[i]);
+            },
           ),
         ),
-        _Composer(controller: _controller, onSend: _send),
+        _Composer(
+            controller: _controller, onSend: _send, enabled: !_sending),
       ],
     );
 
@@ -155,10 +186,72 @@ class _Bubble extends StatelessWidget {
   }
 }
 
+/// "BetterTrack AI is typing…" bubble shown while awaiting a reply.
+class _TypingBubble extends StatefulWidget {
+  const _TypingBubble();
+  @override
+  State<_TypingBubble> createState() => _TypingBubbleState();
+}
+
+class _TypingBubbleState extends State<_TypingBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: AppSpacing.x4),
+        padding: const EdgeInsets.all(AppSpacing.x12),
+        decoration: BoxDecoration(
+          color: AppColors.aiBubble,
+          borderRadius: BorderRadius.circular(AppRadius.button),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            return AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) {
+                final t = (_c.value - i * 0.2) % 1.0;
+                final o = 0.3 + 0.7 * (t < 0.5 ? t * 2 : (1 - t) * 2);
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  height: 8,
+                  width: 8,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDark.withValues(alpha: o),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              },
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
 class _Composer extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
-  const _Composer({required this.controller, required this.onSend});
+  final bool enabled;
+  const _Composer({
+    required this.controller,
+    required this.onSend,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +265,7 @@ class _Composer extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                enabled: enabled,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
                 decoration: const InputDecoration(
@@ -181,12 +275,14 @@ class _Composer extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.x12),
             GestureDetector(
-              onTap: onSend,
+              onTap: enabled ? onSend : null,
               child: Container(
                 height: 56,
                 width: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: enabled
+                      ? AppColors.primary
+                      : AppColors.primary.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(AppRadius.medium),
                 ),
                 child: const Icon(Icons.send_rounded,

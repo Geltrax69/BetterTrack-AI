@@ -22,12 +22,13 @@ Widget _host(Widget child) =>
 
 Future<void> _pumpPhone(WidgetTester tester, Widget screen) async {
   ignoreOverflowErrors();
+  useMockBackend(); // canned API responses, no real network
   tester.view.physicalSize = const Size(1170, 2532); // iPhone 16e
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(_host(screen));
-  await tester.pump(const Duration(milliseconds: 350)); // settle charts/tabs
+  await tester.pump(const Duration(milliseconds: 350)); // settle data/charts/tabs
 }
 
 void main() {

@@ -7,7 +7,9 @@ class Repository {
   Repository({ApiClient? client}) : _api = client ?? ApiClient();
   final ApiClient _api;
 
-  static final Repository instance = Repository();
+  /// Global instance used by screens. Mutable so tests can inject a fake
+  /// (e.g. backed by a MockClient) without reaching the network.
+  static Repository instance = Repository();
 
   List<Map<String, dynamic>> _list(dynamic raw) =>
       (raw as List).cast<Map<String, dynamic>>();

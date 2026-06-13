@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../models/models.dart';
+import '../services/async_value.dart';
+import '../services/repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/async_view.dart';
 import '../widgets/cards.dart';
 import '../widgets/common.dart';
+import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
 
 class GroupDetailsScreen extends StatelessWidget {
@@ -46,10 +50,10 @@ class GroupDetailsScreen extends StatelessWidget {
         body: TabBarView(
           children: [
             _Overview(group: group),
-            _Expenses(),
+            _Expenses(groupId: group.id),
             _Budgets(),
             _Members(count: group.memberCount),
-            const AiChatScreen(embedded: true),
+            AiChatScreen(embedded: true, groupId: group.id),
           ],
         ),
       ),
@@ -135,14 +139,72 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-class _Expenses extends StatelessWidget {
+class _Expenses extends StatefulWidget {
+  final String groupId;
+  const _Expenses({required this.groupId});
+
+  @override
+  State<_Expenses> createState() => _ExpensesState();
+}
+
+class _ExpensesState extends State<_Expenses> {
+  AsyncValue<List<Expense>> _state = const AsyncLoading();
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _state = const AsyncLoading());
+    await _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final list = await Repository.instance.expenses(groupId: widget.groupId);
+      if (!mounted) return;
+      setState(() => _state = AsyncData(list));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _state = AsyncError(e.toString()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.x20),
-      children: [
-        for (final e in MockData.expenses) ExpenseCard(expense: e),
-      ],
+    return RefreshIndicator(
+      color: AppColors.primaryDark,
+      onRefresh: _fetch,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppSpacing.x20),
+        children: [
+          AsyncView<List<Expense>>(
+            state: _state,
+            onRetry: _load,
+            loadingLabel: 'Loading expenses…',
+            builder: (context, list) {
+              if (list.isEmpty) {
+                return EmptyState(
+                  icon: Icons.receipt_long_rounded,
+                  title: 'No expenses yet',
+                  cta: 'Add an expense',
+                  onCta: () async {
+                    final ok = await AddExpenseSheet.show(context,
+                        groupId: widget.groupId);
+                    if (ok) await _fetch();
+                  },
+                );
+              }
+              return Column(
+                children: [for (final e in list) ExpenseCard(expense: e)],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
