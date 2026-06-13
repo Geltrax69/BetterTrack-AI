@@ -41,6 +41,9 @@ dependencies:
   # Lightweight state for the bottom-nav shell and mock stores.
   provider: ^6.1.2
 
+  # REST client for the FastAPI backend.
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

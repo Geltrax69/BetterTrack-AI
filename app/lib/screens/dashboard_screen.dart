@@ -1,55 +1,137 @@
 import 'package:flutter/material.dart';
-import '../data/mock_data.dart';
+import '../models/models.dart';
+import '../services/async_value.dart';
+import '../services/repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/async_view.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/cards.dart';
 import '../widgets/common.dart';
+import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
-import 'group_details_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+/// Combined payload for the dashboard's dynamic sections.
+class _DashData {
+  final Summary summary;
+  final List<Budget> budgets;
+  final List<Activity> activity;
+  const _DashData(this.summary, this.budgets, this.activity);
+}
+
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  AsyncValue<_DashData> _state = const AsyncLoading();
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _state = const AsyncLoading());
+    await _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final repo = Repository.instance;
+      final results = await Future.wait([
+        repo.summary(),
+        repo.budgets(),
+        repo.activity(),
+      ]);
+      if (!mounted) return;
+      setState(() => _state = AsyncData(_DashData(
+            results[0] as Summary,
+            results[1] as List<Budget>,
+            results[2] as List<Activity>,
+          )));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _state = AsyncError(e.toString()));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       bottom: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.x20, AppSpacing.x16, AppSpacing.x20, 120),
-        children: [
-          _Header(),
-          const SizedBox(height: AppSpacing.x20),
-          const BalanceCard(
-            owed: MockData.totalOwed,
-            owing: MockData.totalOwing,
-            net: 8150,
-          ),
-          const SizedBox(height: AppSpacing.x24),
-          _QuickActions(),
-          const SizedBox(height: AppSpacing.x24),
-          const SectionHeader(title: 'Budgets', action: 'See all'),
-          SizedBox(
-            height: 150,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (final b in MockData.budgets) BudgetCard(budget: b),
-              ],
+      child: RefreshIndicator(
+        color: AppColors.primaryDark,
+        onRefresh: _fetch,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.x20, AppSpacing.x16, AppSpacing.x20, 120),
+          children: [
+            const _Header(),
+            const SizedBox(height: AppSpacing.x20),
+            AsyncView<_DashData>(
+              state: _state,
+              onRetry: _load,
+              minLoadingHeight: 360,
+              loadingLabel: 'Loading your money…',
+              builder: (context, data) => _Content(data: data, onChanged: _fetch),
             ),
-          ),
-          const SizedBox(height: AppSpacing.x24),
-          const SectionHeader(title: 'Recent activity', action: 'See all'),
-          for (final a in MockData.activity) ActivityTile(activity: a),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
+class _Content extends StatelessWidget {
+  final _DashData data;
+  final Future<void> Function() onChanged;
+  const _Content({required this.data, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BalanceCard(
+          owed: data.summary.owed,
+          owing: data.summary.owing,
+          net: data.summary.net,
+        ),
+        const SizedBox(height: AppSpacing.x24),
+        _QuickActions(onChanged: onChanged),
+        const SizedBox(height: AppSpacing.x24),
+        const SectionHeader(title: 'Budgets'),
+        if (data.budgets.isEmpty)
+          Text('No budgets yet.', style: AppType.body)
+        else
+          SizedBox(
+            height: 150,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [for (final b in data.budgets) BudgetCard(budget: b)],
+            ),
+          ),
+        const SizedBox(height: AppSpacing.x24),
+        const SectionHeader(title: 'Recent activity'),
+        if (data.activity.isEmpty)
+          Text('Nothing here yet.', style: AppType.body)
+        else
+          for (final a in data.activity) ActivityTile(activity: a),
+      ],
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
+  const _Header();
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -98,6 +180,9 @@ class _IconButton extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
+  final Future<void> Function() onChanged;
+  const _QuickActions({required this.onChanged});
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -106,23 +191,28 @@ class _QuickActions extends StatelessWidget {
           icon: Icons.add_rounded,
           label: 'Add\nExpense',
           color: AppColors.primary,
-          onTap: () => _snack(context, 'Add Expense'),
+          onTap: () async {
+            final created = await AddExpenseSheet.show(context);
+            if (created) await onChanged();
+          },
         ),
         const SizedBox(width: AppSpacing.x12),
         QuickAction(
           icon: Icons.document_scanner_rounded,
           label: 'Scan\nReceipt',
           color: AppColors.food,
-          onTap: () => _snack(context, 'Scan Receipt (OCR)'),
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Scan Receipt (OCR) — coming soon')),
+          ),
         ),
         const SizedBox(width: AppSpacing.x12),
         QuickAction(
           icon: Icons.group_add_rounded,
           label: 'Create\nGroup',
           color: AppColors.travel,
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) =>
-                  GroupDetailsScreen(group: MockData.groups.first))),
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Create Group — coming soon')),
+          ),
         ),
         const SizedBox(width: AppSpacing.x12),
         QuickAction(
@@ -133,12 +223,6 @@ class _QuickActions extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const AiChatScreen())),
         ),
       ],
-    );
-  }
-
-  void _snack(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label — coming soon')),
     );
   }
 }
