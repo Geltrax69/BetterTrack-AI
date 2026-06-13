@@ -22,6 +22,8 @@ Built from [[Design System]] (`design.md.md`).
 - ✅ Flutter design system + 4 main screens + group details + AI chat
 - ✅ FastAPI backend skeleton (AI, OCR, expenses, groups, budgets)
 - ✅ Backend writes activity notes back into this vault
+- ✅ App runs on **live backend data** with loading/error/success everywhere —
+  see [[Live Integration & States]]
 - ⏳ API keys to be added in `backend/.env` (see [[Setup & Run]])
 
 See [[Build Log]] for the step-by-step record.
