@@ -1,0 +1,109 @@
+"""All HTTP routes. In-memory sample data stands in for a DB until one is wired.
+Schemas mirror app/lib/models so the Flutter client can switch from mock to live
+with minimal change."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from fastapi import APIRouter, File, UploadFile
+
+from ..config import get_settings
+from ..models.schemas import (
+    AiChatRequest,
+    AiChatResponse,
+    Budget,
+    Expense,
+    ExpenseCreate,
+    Group,
+    OcrResult,
+)
+from ..services import ai_service, obsidian_sync, ocr_service
+
+router = APIRouter()
+
+# ── Sample in-memory stores ──
+_GROUPS: list[Group] = [
+    Group(id="g1", name="Goa Trip", member_count=5, outstanding=6200,
+          last_activity="Dinner at Olive · 2h ago"),
+    Group(id="g2", name="Flat 402", member_count=3, outstanding=-1800,
+          last_activity="Electricity bill · 1d ago"),
+    Group(id="g3", name="Office Lunch", member_count=8, outstanding=0,
+          last_activity="All settled up · 3d ago"),
+]
+_EXPENSES: list[Expense] = [
+    Expense(id="e1", name="Dinner at Olive", category="food", amount=2400,
+            payer="Sam", date=datetime(2026, 6, 13), group_id="g1"),
+    Expense(id="e2", name="Cab to airport", category="travel", amount=850,
+            payer="You", date=datetime(2026, 6, 12), group_id="g1"),
+]
+_BUDGETS: list[Budget] = [
+    Budget(name="Food", spent=8200, limit=10000),
+    Budget(name="Travel", spent=14500, limit=12000),
+]
+
+
+@router.get("/health")
+def health() -> dict:
+    s = get_settings()
+    return {
+        "status": "ok",
+        "app": s.app_name,
+        "ai_configured": s.ai_ready,
+        "ocr_provider": s.ocr_provider,
+        "obsidian_key_set": bool(s.obsidian_api_key),
+    }
+
+
+# ── Groups ──
+@router.get("/groups", response_model=list[Group])
+def list_groups() -> list[Group]:
+    return _GROUPS
+
+
+# ── Expenses ──
+@router.get("/expenses", response_model=list[Expense])
+def list_expenses(group_id: str | None = None) -> list[Expense]:
+    if group_id:
+        return [e for e in _EXPENSES if e.group_id == group_id]
+    return _EXPENSES
+
+
+@router.post("/expenses", response_model=Expense)
+def create_expense(payload: ExpenseCreate) -> Expense:
+    expense = Expense(
+        id=f"e{uuid.uuid4().hex[:6]}",
+        name=payload.name,
+        category=payload.category,
+        amount=payload.amount,
+        payer=payload.payer,
+        date=datetime.now(),
+        group_id=payload.group_id,
+    )
+    _EXPENSES.append(expense)
+    obsidian_sync.write_note(
+        f"Expense added — {expense.name}",
+        f"- Amount: ₹{expense.amount}\n- Payer: {expense.payer}\n"
+        f"- Category: {expense.category}\n- Group: {expense.group_id}",
+        tags=["bettertrack", "expense"],
+    )
+    return expense
+
+
+# ── Budgets ──
+@router.get("/budgets", response_model=list[Budget])
+def list_budgets() -> list[Budget]:
+    return _BUDGETS
+
+
+# ── AI assistant ──
+@router.post("/ai/chat", response_model=AiChatResponse)
+async def ai_chat(req: AiChatRequest) -> AiChatResponse:
+    return await ai_service.chat(req)
+
+
+# ── OCR ──
+@router.post("/ocr/scan", response_model=OcrResult)
+async def ocr_scan(file: UploadFile = File(...)) -> OcrResult:
+    data = await file.read()
+    return await ocr_service.scan(data)

@@ -1,0 +1,20 @@
+# BetterTrack AI — FastAPI backend
+# Lower bounds (not exact pins) so wheels resolve across Python 3.11 – 3.14.
+fastapi>=0.115
+uvicorn[standard]>=0.34
+pydantic>=2.11
+pydantic-settings>=2.7
+python-dotenv>=1.0
+python-multipart>=0.0.20
+httpx>=0.28
+
+# AI assistant (Claude). Swap/add providers as needed.
+anthropic>=0.42
+
+# Receipt OCR (choose the one matching your .env provider).
+# pytesseract also needs the Tesseract binary: `brew install tesseract`.
+pytesseract>=0.3.13
+Pillow>=11.0
+
+# Obsidian knowledge-graph sync (CLI: `graphify`)
+graphifyy
