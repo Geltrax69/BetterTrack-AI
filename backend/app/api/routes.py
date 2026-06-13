@@ -10,6 +10,7 @@ from fastapi import APIRouter, File, UploadFile
 
 from ..config import get_settings
 from ..models.schemas import (
+    ActivityItem,
     AiChatRequest,
     AiChatResponse,
     Budget,
@@ -17,6 +18,7 @@ from ..models.schemas import (
     ExpenseCreate,
     Group,
     OcrResult,
+    Summary,
 )
 from ..services import ai_service, obsidian_sync, ocr_service
 
@@ -40,6 +42,16 @@ _EXPENSES: list[Expense] = [
 _BUDGETS: list[Budget] = [
     Budget(name="Food", spent=8200, limit=10000),
     Budget(name="Travel", spent=14500, limit=12000),
+    Budget(name="Entertainment", spent=2100, limit=5000),
+    Budget(name="Shopping", spent=3400, limit=6000),
+]
+_ACTIVITY: list[ActivityItem] = [
+    ActivityItem(type="expense", title="Dinner at Olive",
+                 subtitle="Sam paid ₹2,400 · Goa Trip", time="2h"),
+    ActivityItem(type="settlement", title="Settlement completed",
+                 subtitle="Riya settled ₹1,200 with you", time="5h"),
+    ActivityItem(type="budget_alert", title="Travel budget exceeded",
+                 subtitle="₹14,500 of ₹12,000 used", time="1d"),
 ]
 
 
@@ -53,6 +65,19 @@ def health() -> dict:
         "ocr_provider": s.ocr_provider,
         "obsidian_key_set": bool(s.obsidian_api_key),
     }
+
+
+# ── Dashboard summary ──
+@router.get("/summary", response_model=Summary)
+def summary() -> Summary:
+    owed = sum(g.outstanding for g in _GROUPS if g.outstanding > 0)
+    owing = sum(-g.outstanding for g in _GROUPS if g.outstanding < 0)
+    return Summary(owed=owed, owing=owing, net=owed - owing)
+
+
+@router.get("/activity", response_model=list[ActivityItem])
+def activity() -> list[ActivityItem]:
+    return _ACTIVITY
 
 
 # ── Groups ──
@@ -81,6 +106,15 @@ def create_expense(payload: ExpenseCreate) -> Expense:
         group_id=payload.group_id,
     )
     _EXPENSES.append(expense)
+    _ACTIVITY.insert(
+        0,
+        ActivityItem(
+            type="expense",
+            title=expense.name,
+            subtitle=f"{expense.payer} paid ₹{expense.amount:,.0f} · {expense.category}",
+            time="now",
+        ),
+    )
     obsidian_sync.write_note(
         f"Expense added — {expense.name}",
         f"- Amount: ₹{expense.amount}\n- Payer: {expense.payer}\n"

@@ -39,6 +39,19 @@ class Budget(BaseModel):
     group_id: str | None = None
 
 
+class Summary(BaseModel):
+    owed: float
+    owing: float
+    net: float
+
+
+class ActivityItem(BaseModel):
+    type: str  # expense | settlement | budget_alert
+    title: str
+    subtitle: str
+    time: str
+
+
 class AiChatRequest(BaseModel):
     message: str
     group_id: str | None = None
