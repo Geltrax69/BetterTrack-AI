@@ -83,6 +83,47 @@ def health() -> dict:
     }
 
 
+from pathlib import Path as _Path
+
+from ..services import ingest as _ingest
+
+_CSV = _Path(__file__).resolve().parents[2].parent / "expenses_export.csv"
+
+
+@router.get("/import/report")
+def import_report() -> dict:
+    """Ingest the flat's CSV and return the anomaly report + settle-up."""
+    res = _ingest.run_import(_CSV)
+    bal = _ingest.net_balances(res)
+    return {
+        "summary": {
+            "expenses_kept": len([e for e in res.expenses if not e.is_settlement]),
+            "settlements": len([e for e in res.expenses if e.is_settlement]),
+            "skipped": res.skipped,
+            "anomalies": len(res.anomalies),
+            "need_approval": len([a for a in res.anomalies if a.needs_approval]),
+        },
+        "settle_up": [
+            {"from": d, "to": c, "amount": a}
+            for d, c, a in _ingest.settle_up(bal)
+        ],
+        "net_balances": bal,
+        "anomalies": [
+            {"row": a.row, "kind": a.kind, "detail": a.detail,
+             "action": a.action, "needs_approval": a.needs_approval}
+            for a in res.anomalies
+        ],
+        "markdown": _ingest.report_markdown(res),
+    }
+
+
+@router.get("/import/balance/{person}")
+def import_balance(person: str) -> dict:
+    """Every expense behind a person's number (Rohan's request)."""
+    res = _ingest.run_import(_CSV)
+    return {"person": person, "lines": _ingest.breakdown(res, person)}
+
+
 # ── Auth ──
 @router.post("/auth/signup", response_model=AuthResponse)
 def signup(payload: SignupRequest) -> AuthResponse:
