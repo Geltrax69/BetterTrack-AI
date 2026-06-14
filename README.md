@@ -42,7 +42,7 @@ dinner for 4."*
 
 ## Features — what, why & how
 
-### 🔐 Sign in / Sign up
+### <img src="docs/icons/auth.svg" width="20" align="top"/> Sign in / Sign up
 <img src="docs/screenshots/login.png" width="240" align="right" />
 
 **What:** Email/password sign-up & sign-in, plus *Continue with Google*. The
@@ -60,7 +60,7 @@ between the login screen and the app. Wrong password → `401`, duplicate email 
 
 <br clear="all"/>
 
-### 🏠 Dashboard
+### <img src="docs/icons/home.svg" width="20" align="top"/> Dashboard
 <img src="docs/screenshots/dashboard.png" width="240" align="right" />
 
 **What:** Your money in one glance — **net balance** (you're owed vs. you owe),
@@ -77,7 +77,7 @@ error card with **Retry** if the network drops.
 
 <br clear="all"/>
 
-### 👥 Groups, Create & Join
+### <img src="docs/icons/groups.svg" width="20" align="top"/> Groups, Create & Join
 <img src="docs/screenshots/groups.png" width="240" align="right" />
 
 **What:** A searchable list of your groups with per-group balances. **Create a
@@ -92,7 +92,7 @@ a bad code returns a clear *"that code doesn't exist."*
 
 <br clear="all"/>
 
-### 🔗 Share & invite (group code + link)
+### <img src="docs/icons/share.svg" width="20" align="top"/> Share & invite (group code + link)
 <img src="docs/screenshots/groupdetails.png" width="240" align="right" />
 
 **What:** Inside a group: tabs for Overview, Expenses, Budgets, Members, and
@@ -110,7 +110,7 @@ states.
 
 <br clear="all"/>
 
-### 🤖 AI assistant (Gemini)
+### <img src="docs/icons/ai.svg" width="20" align="top"/> AI assistant (Gemini)
 <img src="docs/screenshots/aichat.png" width="240" align="right" />
 
 **What:** Chat with **BetterTrack AI** inside any group. Ask *"how much do I owe
@@ -128,7 +128,7 @@ gracefully if no key is set.
 
 <br clear="all"/>
 
-### 👤 Profile & settings
+### <img src="docs/icons/profile.svg" width="20" align="top"/> Profile & settings
 <img src="docs/screenshots/profile.png" width="240" align="right" />
 
 **What:** Edit your profile, pick a **default currency**, toggle
@@ -144,7 +144,7 @@ token and returns you to the login screen.
 
 <br clear="all"/>
 
-### 📊 Analytics
+### <img src="docs/icons/analytics.svg" width="20" align="top"/> Analytics
 <img src="docs/screenshots/analytics.png" width="240" align="right" />
 
 **What:** Spend trend (line) and category breakdown (pie), plus stat cards —
@@ -184,6 +184,98 @@ backend/    FastAPI service (auth, groups, expenses, budgets, AI, OCR)
 BetterTrack/  Obsidian notes documenting the build
 docs/screenshots/  the images in this README
 ```
+
+---
+
+## <img src="docs/icons/data.svg" width="20" align="top"/> Importing the flat's spreadsheet (settle-up engine)
+
+Real expense data is messy. The app ingests `expenses_export.csv` and turns it
+into a clean **who-pays-whom** plan, logging every anomaly and the action taken
+(see the generated [`IMPORT_REPORT.md`](IMPORT_REPORT.md),
+[`SCOPE.md`](SCOPE.md), [`DECISIONS.md`](DECISIONS.md)).
+
+It directly answers each flatmate:
+
+| Flatmate | Ask | How |
+|---|---|---|
+| **Aisha** | one number per person | greedy **minimum-cash-flow** settle-up (fewest transfers) |
+| **Rohan** | show the expenses behind a balance | `GET /import/balance/{person}` — every line |
+| **Priya** | dollars aren't rupees | USD→INR conversion at a documented rate |
+| **Sam** | March bills shouldn't hit me | **membership windows** — off-period members dropped from splits |
+| **Meera** | approve deletions/changes | destructive anomalies flagged `needs_approval` |
+
+Handled anomalies include duplicates, settlements mislabelled as expenses,
+`"1,200"`/` 1450 ` number formats, mixed `DD/MM` vs ISO vs `"Mar 14"` dates,
+110% percentage splits, a guest (Kabir) whose share is absorbed by his sponsor,
+zero/negative amounts and a missing payer. A hard invariant — **all balances sum
+to ₹0** — guards the math.
+
+```bash
+curl localhost:8000/api/import/report          # anomalies + settle-up plan
+curl localhost:8000/api/import/balance/Rohan   # itemised, no magic numbers
+```
+
+## <img src="docs/icons/data.svg" width="20" align="top"/> Backend architecture & how it's connected
+
+```
+                 Flutter app
+                     │  HTTP/JSON (api_client → repository)
+                     ▼
+        FastAPI (app/main.py)  ──CORS──►  /api router (api/routes.py)
+                     │
+   ┌─────────────────┼───────────────────────────────┐
+   ▼                 ▼                ▼                ▼
+config.py        services/        in-memory         ingest.py
+(.env typed)   ai · ocr · auth     stores          (CSV → settle-up)
+                 · obsidian      (groups, etc.)
+                     │                                │
+              Gemini / Tesseract              expenses_export.csv
+                     │
+              Obsidian vault  ◄── activity notes on each write
+```
+
+- **`config.py`** loads typed settings from `.env` (Gemini key, Firebase config,
+  OCR provider, Obsidian).
+- **`api/routes.py`** is the single router mounted at `/api`; it calls the
+  **services** and the in-memory stores.
+- **services/** are independent units: `ai_service` (Gemini), `ocr_service`
+  (Tesseract), `auth_service` (tokens), `obsidian_sync` (writes notes), and
+  `ingest` (the settle-up engine).
+- The app talks to the backend only through `api_client.dart` → `repository.dart`,
+  so swapping mock ↔ live is one line.
+
+## <img src="docs/icons/data.svg" width="20" align="top"/> Data model & the knowledge graph (Graphify)
+
+Data is held in in-memory stores today, modelled on a relational schema
+(`members`, `expenses`, `expense_shares`, `settlements`, `anomalies`,
+`fx_rates` — full schema in [`SCOPE.md`](SCOPE.md)). Key relation:
+`expenses 1—* expense_shares *—1 members`, with the invariant
+`Σ shares = amount` per expense.
+
+**Graphify** (`pip install graphifyy`) parses the whole codebase — including
+`ingest.py` and `routes.py` — into a `graph.json` + `graph.html`, so the data
+flow *CSV → run_import → net_balances → settle_up → API → app* is a navigable
+graph. It keeps the app, backend and Obsidian notes **connected** as the project
+grows. Rebuild any time:
+
+```bash
+cd backend && source .venv/bin/activate
+graphify update ../backend/app && graphify update ../app/lib
+```
+
+## <img src="docs/icons/link.svg" width="20" align="top"/> Notifications via Zapier
+
+Outbound notifications are delivered through **Zapier**. The backend posts a JSON
+event to a Zapier **Catch Hook** whenever something noteworthy happens (an expense
+is added, a member joins, a budget is exceeded). From there a Zap fans the event
+out to email / Slack / push without the app needing to own that plumbing.
+
+```
+expense added ─► POST {ZAPIER_HOOK_URL} ─► Zapier Zap ─► email · Slack · push
+```
+
+Set `ZAPIER_HOOK_URL` in `backend/.env`; if it's unset the app simply skips the
+notification (no hard dependency).
 
 ## Run it
 

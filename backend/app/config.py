@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     firebase_api_key: str = ""
     google_oauth_web_client_id: str = ""
 
+    # Zapier Catch Hook for outbound notifications (optional)
+    zapier_hook_url: str = ""
+
     secret_key: str = ""
 
     @property

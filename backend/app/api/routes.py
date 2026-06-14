@@ -26,7 +26,7 @@ from ..models.schemas import (
     SignupRequest,
     Summary,
 )
-from ..services import ai_service, auth_service, obsidian_sync, ocr_service
+from ..services import ai_service, auth_service, notify, obsidian_sync, ocr_service
 
 router = APIRouter()
 
@@ -228,6 +228,8 @@ def join_group(payload: GroupJoin) -> Group:
                 f"- {payload.member_name} joined via code {code}",
                 tags=["bettertrack", "group"],
             )
+            notify.send("member_joined",
+                        {"group": g.name, "member": payload.member_name})
             return g
     raise HTTPException(
         status_code=404, detail="That group code doesn't exist. Check and try again."
@@ -269,6 +271,10 @@ def create_expense(payload: ExpenseCreate) -> Expense:
         f"- Category: {expense.category}\n- Group: {expense.group_id}",
         tags=["bettertrack", "expense"],
     )
+    notify.send("expense_added", {
+        "name": expense.name, "amount": expense.amount,
+        "payer": expense.payer, "group_id": expense.group_id,
+    })
     return expense
 
 
