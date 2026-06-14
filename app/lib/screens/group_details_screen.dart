@@ -11,6 +11,7 @@ import '../widgets/cards.dart';
 import '../widgets/common.dart';
 import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
+import 'share_group_sheet.dart';
 
 class GroupDetailsScreen extends StatelessWidget {
   final Group group;
@@ -31,6 +32,14 @@ class GroupDetailsScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
           ),
           title: Text(group.name, style: AppType.h3),
+          actions: [
+            if (group.code.isNotEmpty)
+              IconButton(
+                tooltip: 'Share invite',
+                icon: const Icon(Icons.ios_share_rounded),
+                onPressed: () => ShareGroupSheet.show(context, group),
+              ),
+          ],
           bottom: TabBar(
             isScrollable: true,
             labelColor: AppColors.textPrimary,
@@ -104,10 +113,51 @@ class _Overview extends StatelessWidget {
             _MiniStat(label: 'Active budgets', value: '3'),
           ],
         ),
+        if (group.code.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.x16),
+          _InviteCard(group: group),
+        ],
         const SizedBox(height: AppSpacing.x24),
         const SectionHeader(title: 'Recent activity'),
         for (final a in MockData.activity) ActivityTile(activity: a),
       ],
+    );
+  }
+}
+
+class _InviteCard extends StatelessWidget {
+  final Group group;
+  const _InviteCard({required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => ShareGroupSheet.show(context, group),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.x16),
+        decoration: BoxDecoration(
+          color: AppColors.aiBubble,
+          borderRadius: BorderRadius.circular(AppRadius.large),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.qr_code_rounded, color: AppColors.primaryDark),
+            const SizedBox(width: AppSpacing.x12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Invite code', style: AppType.caption),
+                  Text(group.code,
+                      style: AppType.h3.copyWith(letterSpacing: 3)),
+                ],
+              ),
+            ),
+            const Icon(Icons.ios_share_rounded,
+                color: AppColors.primaryDark, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

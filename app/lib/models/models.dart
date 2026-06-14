@@ -76,6 +76,7 @@ class Group {
   final double outstanding; // +ve you are owed, -ve you owe
   final String lastActivity;
   final Color tint;
+  final String code;
 
   const Group({
     required this.id,
@@ -85,7 +86,11 @@ class Group {
     required this.outstanding,
     required this.lastActivity,
     required this.tint,
+    this.code = '',
   });
+
+  /// Shareable deep link a friend can tap to join.
+  String get shareLink => 'https://bettertrack.ai/join/$code';
 
   factory Group.fromJson(Map<String, dynamic> j) {
     final id = j['id'] as String? ?? '';
@@ -97,6 +102,7 @@ class Group {
       outstanding: _toDouble(j['outstanding']),
       lastActivity: j['last_activity'] as String? ?? '',
       tint: tintForId(id),
+      code: j['code'] as String? ?? '',
     );
   }
 }

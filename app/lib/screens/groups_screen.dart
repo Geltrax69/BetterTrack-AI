@@ -10,6 +10,7 @@ import '../widgets/cards.dart';
 import '../widgets/common.dart';
 import 'create_group_sheet.dart';
 import 'group_details_screen.dart';
+import 'join_group_sheet.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -49,6 +50,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
     if (created) await _fetch();
   }
 
+  Future<void> _joinGroup() async {
+    final group = await JoinGroupSheet.show(context);
+    if (group == null) return;
+    await _fetch();
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => GroupDetailsScreen(group: group)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +83,31 @@ class _GroupsScreenState extends State<GroupsScreen> {
             padding: const EdgeInsets.fromLTRB(
                 AppSpacing.x20, AppSpacing.x16, AppSpacing.x20, 120),
             children: [
-              Text('Groups', style: AppType.h1),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Groups', style: AppType.h1),
+                  GestureDetector(
+                    onTap: _joinGroup,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.x16, vertical: AppSpacing.x8),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary,
+                        borderRadius: BorderRadius.circular(AppRadius.button),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.login_rounded,
+                              size: 18, color: AppColors.textPrimary),
+                          const SizedBox(width: AppSpacing.x8),
+                          Text('Join', style: AppType.bodyLarge),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.x16),
               TextField(
                 onChanged: (v) => setState(() => _query = v.toLowerCase()),

@@ -61,6 +61,14 @@ class Repository {
     return Group.fromJson(raw as Map<String, dynamic>);
   }
 
+  Future<Group> joinGroup({required String code, String memberName = 'You'}) async {
+    final raw = await _api.post('/groups/join', body: {
+      'code': code.trim().toUpperCase(),
+      'member_name': memberName,
+    });
+    return Group.fromJson(raw as Map<String, dynamic>);
+  }
+
   Future<String> aiChat(String message, {String? groupId}) async {
     final raw = await _api.post('/ai/chat',
         body: {'message': message, 'group_id': groupId});

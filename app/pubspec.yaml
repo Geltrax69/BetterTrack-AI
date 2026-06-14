@@ -44,6 +44,9 @@ dependencies:
   # REST client for the FastAPI backend.
   http: ^1.2.2
 
+  # Native share sheet for group invite links / codes.
+  share_plus: ^10.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
