@@ -13,6 +13,12 @@ class Group(BaseModel):
     last_activity: str = ""
 
 
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=1)
+    members: list[str] = []
+    currency: str = "₹"
+
+
 class Expense(BaseModel):
     id: str
     name: str

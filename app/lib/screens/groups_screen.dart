@@ -8,6 +8,7 @@ import '../theme/app_typography.dart';
 import '../widgets/async_view.dart';
 import '../widgets/cards.dart';
 import '../widgets/common.dart';
+import 'create_group_sheet.dart';
 import 'group_details_screen.dart';
 
 class GroupsScreen extends StatefulWidget {
@@ -43,6 +44,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
     }
   }
 
+  Future<void> _createGroup() async {
+    final created = await CreateGroupSheet.show(context);
+    if (created) await _fetch();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,9 +58,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Create Group — coming soon')),
-        ),
+        onPressed: _createGroup,
         icon: const Icon(Icons.add_rounded),
         label: Text('Create Group', style: AppType.bodyLarge),
       ),
@@ -93,9 +97,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       icon: Icons.groups_rounded,
                       title: _query.isEmpty ? 'No groups yet' : 'No matches',
                       cta: 'Create your first group',
-                      onCta: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Create Group — coming soon')),
-                      ),
+                      onCta: _createGroup,
                     );
                   }
                   return Column(

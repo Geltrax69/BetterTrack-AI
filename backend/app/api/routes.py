@@ -17,6 +17,7 @@ from ..models.schemas import (
     Expense,
     ExpenseCreate,
     Group,
+    GroupCreate,
     OcrResult,
     Summary,
 )
@@ -84,6 +85,35 @@ def activity() -> list[ActivityItem]:
 @router.get("/groups", response_model=list[Group])
 def list_groups() -> list[Group]:
     return _GROUPS
+
+
+@router.post("/groups", response_model=Group)
+def create_group(payload: GroupCreate) -> Group:
+    members = [m.strip() for m in payload.members if m.strip()]
+    group = Group(
+        id=f"g{uuid.uuid4().hex[:6]}",
+        name=payload.name.strip(),
+        member_count=max(1, len(members)),
+        currency=payload.currency or "₹",
+        outstanding=0.0,
+        last_activity="Group created · just now",
+    )
+    _GROUPS.insert(0, group)
+    _ACTIVITY.insert(
+        0,
+        ActivityItem(
+            type="settlement",
+            title=f"{group.name} created",
+            subtitle=f"{group.member_count} member(s)",
+            time="now",
+        ),
+    )
+    obsidian_sync.write_note(
+        f"Group created — {group.name}",
+        f"- Members: {', '.join(members) or '—'}\n- Currency: {group.currency}",
+        tags=["bettertrack", "group"],
+    )
+    return group
 
 
 # ── Expenses ──

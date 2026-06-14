@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 void useMockBackend() {
   final mock = MockClient((req) async {
     final path = req.url.path;
+    final isPost = req.method == 'POST';
     Object body;
     if (path.endsWith('/summary')) {
       body = {'owed': 6200, 'owing': 1800, 'net': 4400};
@@ -26,16 +27,24 @@ void useMockBackend() {
          'subtitle': 'Sam paid ₹2,400', 'time': '2h'},
       ];
     } else if (path.endsWith('/groups')) {
-      body = [
-        {'id': 'g1', 'name': 'Goa Trip', 'member_count': 5, 'currency': '₹',
-         'outstanding': 6200, 'last_activity': 'Dinner · 2h'},
-      ];
+      // POST returns the created group (object); GET returns the list.
+      body = isPost
+          ? {'id': 'gNew', 'name': 'New Group', 'member_count': 1,
+             'currency': '₹', 'outstanding': 0, 'last_activity': 'Created'}
+          : [
+              {'id': 'g1', 'name': 'Goa Trip', 'member_count': 5,
+               'currency': '₹', 'outstanding': 6200,
+               'last_activity': 'Dinner · 2h'},
+            ];
     } else if (path.contains('/expenses')) {
-      body = [
-        {'id': 'e1', 'name': 'Dinner at Olive', 'category': 'food',
-         'amount': 2400, 'payer': 'Sam', 'date': '2026-06-13T00:00:00',
-         'settled': false},
-      ];
+      body = isPost
+          ? {'id': 'eNew', 'name': 'New', 'category': 'food', 'amount': 100,
+             'payer': 'You', 'date': '2026-06-13T00:00:00', 'settled': false}
+          : [
+              {'id': 'e1', 'name': 'Dinner at Olive', 'category': 'food',
+               'amount': 2400, 'payer': 'Sam', 'date': '2026-06-13T00:00:00',
+               'settled': false},
+            ];
     } else if (path.endsWith('/ai/chat')) {
       body = {'reply': 'Sure!', 'used_ai': false};
     } else {

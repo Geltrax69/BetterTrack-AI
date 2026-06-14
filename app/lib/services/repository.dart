@@ -48,6 +48,19 @@ class Repository {
     return Expense.fromJson(raw as Map<String, dynamic>);
   }
 
+  Future<Group> createGroup({
+    required String name,
+    List<String> members = const [],
+    String currency = '₹',
+  }) async {
+    final raw = await _api.post('/groups', body: {
+      'name': name,
+      'members': members,
+      'currency': currency,
+    });
+    return Group.fromJson(raw as Map<String, dynamic>);
+  }
+
   Future<String> aiChat(String message, {String? groupId}) async {
     final raw = await _api.post('/ai/chat',
         body: {'message': message, 'group_id': groupId});

@@ -11,6 +11,7 @@ import '../widgets/cards.dart';
 import '../widgets/common.dart';
 import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
+import 'create_group_sheet.dart';
 
 /// Combined payload for the dashboard's dynamic sections.
 class _DashData {
@@ -210,9 +211,10 @@ class _QuickActions extends StatelessWidget {
           icon: Icons.group_add_rounded,
           label: 'Create\nGroup',
           color: AppColors.travel,
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create Group — coming soon')),
-          ),
+          onTap: () async {
+            final created = await CreateGroupSheet.show(context);
+            if (created) await onChanged();
+          },
         ),
         const SizedBox(width: AppSpacing.x12),
         QuickAction(
