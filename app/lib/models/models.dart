@@ -127,6 +127,71 @@ class Activity {
       );
 }
 
+/// One transfer in the settle-up plan (who pays whom).
+class Transfer {
+  final String from;
+  final String to;
+  final double amount;
+  const Transfer({required this.from, required this.to, required this.amount});
+
+  factory Transfer.fromJson(Map<String, dynamic> j) => Transfer(
+        from: j['from'] as String? ?? '',
+        to: j['to'] as String? ?? '',
+        amount: _toDouble(j['amount']),
+      );
+}
+
+/// One detected anomaly + the action taken (GET /api/import/report).
+class ImportAnomaly {
+  final int row;
+  final String kind;
+  final String detail;
+  final String action;
+  final bool needsApproval;
+  const ImportAnomaly({
+    required this.row,
+    required this.kind,
+    required this.detail,
+    required this.action,
+    required this.needsApproval,
+  });
+
+  factory ImportAnomaly.fromJson(Map<String, dynamic> j) => ImportAnomaly(
+        row: (j['row'] as num?)?.toInt() ?? 0,
+        kind: j['kind'] as String? ?? '',
+        detail: j['detail'] as String? ?? '',
+        action: j['action'] as String? ?? '',
+        needsApproval: j['needs_approval'] as bool? ?? false,
+      );
+}
+
+/// The full CSV import result: settle-up plan, net balances, anomalies.
+class ImportReport {
+  final Map<String, dynamic> summary;
+  final List<Transfer> settleUp;
+  final Map<String, double> netBalances;
+  final List<ImportAnomaly> anomalies;
+  const ImportReport({
+    required this.summary,
+    required this.settleUp,
+    required this.netBalances,
+    required this.anomalies,
+  });
+
+  factory ImportReport.fromJson(Map<String, dynamic> j) => ImportReport(
+        summary: (j['summary'] as Map?)?.cast<String, dynamic>() ?? {},
+        settleUp: ((j['settle_up'] as List?) ?? [])
+            .map((e) => Transfer.fromJson((e as Map).cast<String, dynamic>()))
+            .toList(),
+        netBalances: ((j['net_balances'] as Map?) ?? {})
+            .map((k, v) => MapEntry(k as String, _toDouble(v))),
+        anomalies: ((j['anomalies'] as List?) ?? [])
+            .map((e) =>
+                ImportAnomaly.fromJson((e as Map).cast<String, dynamic>()))
+            .toList(),
+      );
+}
+
 /// Dashboard balance summary (GET /api/summary).
 class Summary {
   final double owed;

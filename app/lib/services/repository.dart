@@ -91,6 +91,17 @@ class Repository {
     return Group.fromJson(raw as Map<String, dynamic>);
   }
 
+  // ── CSV import / settle-up ──
+  Future<ImportReport> importReport() async {
+    final raw = await _api.get('/import/report') as Map<String, dynamic>;
+    return ImportReport.fromJson(raw);
+  }
+
+  Future<List<Map<String, dynamic>>> balanceBreakdown(String person) async {
+    final raw = await _api.get('/import/balance/$person') as Map<String, dynamic>;
+    return (raw['lines'] as List).cast<Map<String, dynamic>>();
+  }
+
   /// Sends a receipt image to OCR; returns {merchant,total,category,...}.
   Future<Map<String, dynamic>> scanReceipt(List<int> bytes) async {
     final raw = await _api.uploadBytes('/ocr/scan', bytes,

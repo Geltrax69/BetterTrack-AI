@@ -13,6 +13,7 @@ import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
 import 'create_group_sheet.dart';
 import 'scan_receipt.dart';
+import 'settle_up_screen.dart';
 
 /// Combined payload for the dashboard's dynamic sections.
 class _DashData {
@@ -105,6 +106,32 @@ class _Content extends StatelessWidget {
           owed: data.summary.owed,
           owing: data.summary.owing,
           net: data.summary.net,
+        ),
+        const SizedBox(height: AppSpacing.x12),
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettleUpScreen())),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.x16, vertical: AppSpacing.x12),
+            decoration: BoxDecoration(
+              color: AppColors.aiBubble,
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.account_tree_rounded,
+                    size: 20, color: AppColors.primaryDark),
+                const SizedBox(width: AppSpacing.x12),
+                Expanded(
+                  child: Text('View settle-up plan',
+                      style: AppType.bodyLarge),
+                ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.textSecondary),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: AppSpacing.x24),
         _QuickActions(onChanged: onChanged),

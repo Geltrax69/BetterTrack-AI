@@ -189,10 +189,14 @@ docs/screenshots/  the images in this README
 
 ## <img src="docs/icons/data.svg" width="20" align="top"/> Importing the flat's spreadsheet (settle-up engine)
 
+<img src="docs/screenshots/settleup.png" width="240" align="right" />
+
 Real expense data is messy. The app ingests `expenses_export.csv` and turns it
 into a clean **who-pays-whom** plan, logging every anomaly and the action taken
 (see the generated [`IMPORT_REPORT.md`](IMPORT_REPORT.md),
-[`SCOPE.md`](SCOPE.md), [`DECISIONS.md`](DECISIONS.md)).
+[`SCOPE.md`](SCOPE.md), [`DECISIONS.md`](DECISIONS.md)). The **Settle up** screen
+shows the plan, each person's net (tap for the full breakdown — no magic
+numbers), and the anomalies to approve.
 
 It directly answers each flatmate:
 
