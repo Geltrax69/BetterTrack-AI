@@ -228,11 +228,14 @@ def run_import(csv_path: str | Path) -> ImportResult:
             result.skipped += 1
             continue
 
-        # Exact duplicate (same date+desc+amount+currency).
-        key = (date, norm_desc, amount, currency)
+        # Duplicate: same payer + date + amount + currency, even if the text
+        # differs ("Dinner at Marina Bites" vs "dinner - marina bites").
+        key = (date, payer, amount, currency)
         if key in seen:
-            A(Anomaly(i, "duplicate", f"'{desc}' duplicates row {seen[key]}",
-                      "flagged as duplicate — remove on approval", True))
+            A(Anomaly(i, "duplicate",
+                      f"'{desc}' looks like a duplicate of row {seen[key]} "
+                      f"(same payer/date/amount)",
+                      "skipped as duplicate — restore on approval", True))
             result.skipped += 1
             continue
         seen[key] = i

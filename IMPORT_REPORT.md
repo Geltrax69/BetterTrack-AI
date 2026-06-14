@@ -5,16 +5,16 @@ _Generated from `expenses_export.csv` — 2026-06-14._
 ## Summary
 
 - Rows read: **42**
-- Expenses kept: **39**
+- Expenses kept: **38**
 - Settlements/transfers: **1**
-- Rows skipped: **2**
-- Anomalies detected: **25** (**5** need approval)
+- Rows skipped: **3**
+- Anomalies detected: **26** (**6** need approval)
 
 ## Who pays whom (final settle-up)
 
-- **Priya → Aisha:** ₹61,959.06
-- **Rohan → Aisha:** ₹29,351.88
-- **Rohan → Dev:** ₹25,688.18
+- **Priya → Aisha:** ₹61,159.06
+- **Rohan → Aisha:** ₹30,951.88
+- **Rohan → Dev:** ₹23,288.18
 - **Meera → Dev:** ₹5,798.82
 - **Meera → Sam:** ₹14,722.50
 
@@ -22,17 +22,18 @@ _Generated from `expenses_export.csv` — 2026-06-14._
 
 | Person | Net (₹) |
 |---|---|
-| Aisha | +91,310.94 |
-| Dev | +31,487.00 |
+| Aisha | +92,110.94 |
+| Dev | +29,087.00 |
 | Sam | +14,722.50 |
 | Meera | -20,521.32 |
-| Rohan | -55,040.06 |
-| Priya | -61,959.06 |
+| Rohan | -54,240.06 |
+| Priya | -61,159.06 |
 
 ## Anomalies & actions taken
 
 | Row | Type | What we found | Action | Approval? |
 |---|---|---|---|---|
+| 6 | duplicate | 'dinner - marina bites' looks like a duplicate of row 5 (same payer/date/amount) | skipped as duplicate — restore on approval | ⚠️ yes |
 | 13 | missing_payer | 'House cleaning supplies' has no paid_by | row skipped — cannot attribute | ⚠️ yes |
 | 14 | settlement | 'Rohan paid Aisha back' is a transfer, not an expense | recorded as settlement Rohan → Aisha | auto |
 | 15 | percentage_sum | percentages sum to 110.0%, not 100% | renormalised to 100% | ⚠️ yes |
