@@ -47,6 +47,9 @@ dependencies:
   # Native share sheet for group invite links / codes.
   share_plus: ^10.1.4
 
+  # Persist user settings (currency, notification toggles, profile, etc.).
+  shared_preferences: ^2.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
