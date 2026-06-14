@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../services/repository.dart';
 import '../services/settings.dart';
 import '../theme/app_colors.dart';
@@ -98,21 +99,22 @@ class _LoginScreenState extends State<LoginScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.x24),
           children: [
-            const SizedBox(height: AppSpacing.x40),
-            // Brand mark.
+            const SizedBox(height: AppSpacing.x32),
+            // Brand mark — the BetterTrack AI mascot.
             Center(
               child: Container(
-                height: 72,
-                width: 72,
+                height: 116,
+                width: 116,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(AppRadius.large),
+                  color: AppColors.secondary,
+                  shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.account_balance_wallet_rounded,
-                    size: 36, color: AppColors.textPrimary),
+                padding: const EdgeInsets.all(AppSpacing.x12),
+                child: Image.asset('assets/images/logo.png',
+                    fit: BoxFit.contain),
               ),
             ),
-            const SizedBox(height: AppSpacing.x16),
+            const SizedBox(height: AppSpacing.x20),
             Center(child: Text('BetterTrack AI', style: AppType.h1)),
             const SizedBox(height: AppSpacing.x4),
             Center(
@@ -204,15 +206,20 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: AppSpacing.x20),
             OutlinedButton.icon(
               onPressed: _google,
-              icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
+              icon: SvgPicture.asset('assets/icons/google.svg',
+                  height: 22, width: 22),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(56),
+                backgroundColor: AppColors.surface,
                 foregroundColor: AppColors.textPrimary,
                 side: const BorderSide(color: AppColors.border),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.button)),
               ),
-              label: Text('Continue with Google', style: AppType.bodyLarge),
+              label: Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.x8),
+                child: Text('Continue with Google', style: AppType.bodyLarge),
+              ),
             ),
           ],
         ),
