@@ -4,6 +4,7 @@ import '../services/repository.dart';
 import '../services/settings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../widgets/async_view.dart';
 import '../widgets/state_button.dart';
@@ -100,18 +101,18 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(AppSpacing.x24),
           children: [
             const SizedBox(height: AppSpacing.x32),
-            // Brand mark — the BetterTrack AI mascot.
+            // Brand mark — the BetterTrack AI mascot (matches the app icon).
             Center(
               child: Container(
-                height: 116,
-                width: 116,
+                height: 104,
+                width: 104,
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: AppColors.secondary,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  boxShadow: AppTheme.shadow2,
                 ),
-                padding: const EdgeInsets.all(AppSpacing.x12),
-                child: Image.asset('assets/images/logo.png',
-                    fit: BoxFit.contain),
+                child: Image.asset('assets/images/app_icon.png',
+                    fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: AppSpacing.x20),

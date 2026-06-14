@@ -91,6 +91,13 @@ class Repository {
     return Group.fromJson(raw as Map<String, dynamic>);
   }
 
+  /// Sends a receipt image to OCR; returns {merchant,total,category,...}.
+  Future<Map<String, dynamic>> scanReceipt(List<int> bytes) async {
+    final raw = await _api.uploadBytes('/ocr/scan', bytes,
+        filename: 'receipt.jpg');
+    return (raw as Map<String, dynamic>?) ?? {};
+  }
+
   Future<String> aiChat(String message, {String? groupId}) async {
     // The model can take a while; give it room before timing out.
     final raw = await _api.post('/ai/chat',

@@ -71,5 +71,9 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>BetterTrack needs photo access to scan receipts.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>BetterTrack uses the camera to scan receipts.</string>
 </dict>
 </plist>

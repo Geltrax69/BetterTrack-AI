@@ -12,6 +12,7 @@ import '../widgets/common.dart';
 import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
 import 'create_group_sheet.dart';
+import 'scan_receipt.dart';
 
 /// Combined payload for the dashboard's dynamic sections.
 class _DashData {
@@ -202,9 +203,10 @@ class _QuickActions extends StatelessWidget {
           icon: Icons.document_scanner_rounded,
           label: 'Scan\nReceipt',
           color: AppColors.food,
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Scan Receipt (OCR) — coming soon')),
-          ),
+          onTap: () async {
+            final created = await ScanReceipt.run(context);
+            if (created) await onChanged();
+          },
         ),
         const SizedBox(width: AppSpacing.x12),
         QuickAction(

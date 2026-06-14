@@ -12,9 +12,24 @@ import '../widgets/state_button.dart';
 /// expense was created so the caller can refresh.
 class AddExpenseSheet extends StatefulWidget {
   final String? groupId;
-  const AddExpenseSheet({super.key, this.groupId});
+  final String? prefillName;
+  final double? prefillAmount;
+  final String? prefillCategory;
+  const AddExpenseSheet({
+    super.key,
+    this.groupId,
+    this.prefillName,
+    this.prefillAmount,
+    this.prefillCategory,
+  });
 
-  static Future<bool> show(BuildContext context, {String? groupId}) async {
+  static Future<bool> show(
+    BuildContext context, {
+    String? groupId,
+    String? prefillName,
+    double? prefillAmount,
+    String? prefillCategory,
+  }) async {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -22,7 +37,12 @@ class AddExpenseSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      builder: (_) => AddExpenseSheet(groupId: groupId),
+      builder: (_) => AddExpenseSheet(
+        groupId: groupId,
+        prefillName: prefillName,
+        prefillAmount: prefillAmount,
+        prefillCategory: prefillCategory,
+      ),
     );
     return created ?? false;
   }
@@ -32,10 +52,14 @@ class AddExpenseSheet extends StatefulWidget {
 }
 
 class _AddExpenseSheetState extends State<AddExpenseSheet> {
-  final _name = TextEditingController();
-  final _amount = TextEditingController();
+  late final _name = TextEditingController(text: widget.prefillName ?? '');
+  late final _amount = TextEditingController(
+      text: widget.prefillAmount != null
+          ? widget.prefillAmount!.toStringAsFixed(0)
+          : '');
   final _payer = TextEditingController(text: 'You');
-  String _category = 'food';
+  late String _category =
+      _cats.containsKey(widget.prefillCategory) ? widget.prefillCategory! : 'food';
   String? _error;
 
   static const _cats = {

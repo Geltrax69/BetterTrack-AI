@@ -11,11 +11,49 @@ import '../widgets/cards.dart';
 import '../widgets/common.dart';
 import 'add_expense_sheet.dart';
 import 'ai_chat_screen.dart';
+import 'scan_receipt.dart';
 import 'share_group_sheet.dart';
 
 class GroupDetailsScreen extends StatelessWidget {
   final Group group;
   const GroupDetailsScreen({super.key, required this.group});
+
+  Future<void> _showAddMenu(BuildContext context, String groupId) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.x8),
+            ListTile(
+              leading: const Icon(Icons.edit_rounded, color: AppColors.textPrimary),
+              title: Text('Add expense', style: AppType.bodyLarge),
+              onTap: () => Navigator.of(ctx).pop('add'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.document_scanner_rounded,
+                  color: AppColors.textPrimary),
+              title: Text('Scan receipt', style: AppType.bodyLarge),
+              subtitle: Text('Detect the total with OCR', style: AppType.caption),
+              onTap: () => Navigator.of(ctx).pop('scan'),
+            ),
+            const SizedBox(height: AppSpacing.x12),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted || choice == null) return;
+    if (choice == 'add') {
+      await AddExpenseSheet.show(context, groupId: groupId);
+    } else if (choice == 'scan') {
+      await ScanReceipt.run(context, groupId: groupId);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +61,16 @@ class GroupDetailsScreen extends StatelessWidget {
       length: 5,
       child: Scaffold(
         backgroundColor: AppColors.surface,
+        floatingActionButton: Builder(
+          builder: (context) => FloatingActionButton(
+            heroTag: 'group_add_fab',
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.textPrimary,
+            elevation: 0,
+            onPressed: () => _showAddMenu(context, group.id),
+            child: const Icon(Icons.add_rounded),
+          ),
+        ),
         appBar: AppBar(
           backgroundColor: AppColors.surface,
           surfaceTintColor: Colors.transparent,

@@ -45,6 +45,18 @@ class ApiClient {
         timeout: timeout,
       );
 
+  /// Multipart upload (e.g. a receipt image to /ocr/scan).
+  Future<dynamic> uploadBytes(String path, List<int> bytes,
+      {String field = 'file', String filename = 'upload.jpg',
+      Duration? timeout}) async {
+    return _send(() async {
+      final req = http.MultipartRequest('POST', _uri(path))
+        ..files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+      final streamed = await req.send();
+      return http.Response.fromStream(streamed);
+    }, timeout: timeout ?? const Duration(seconds: 45));
+  }
+
   Future<dynamic> _send(Future<http.Response> Function() run,
       {Duration? timeout}) async {
     try {
