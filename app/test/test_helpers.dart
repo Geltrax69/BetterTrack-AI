@@ -2,10 +2,20 @@ import 'dart:convert';
 
 import 'package:bettertrack/services/api_client.dart';
 import 'package:bettertrack/services/repository.dart';
+import 'package:bettertrack/services/settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Initialises [AppSettings] with mock prefs. Pass loggedIn:true so the AuthGate
+/// shows the app (not the login screen) during widget tests.
+Future<void> useTestSettings({bool loggedIn = false}) async {
+  SharedPreferences.setMockInitialValues(
+      loggedIn ? {'token': 'test-token'} : {});
+  await AppSettings.instance.init();
+}
 
 /// Installs a [Repository] backed by a MockClient returning canned JSON, so
 /// screens load instantly with no real network (no sockets, no pending timers).

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'services/settings.dart';
 import 'theme/app_theme.dart';
-import 'screens/home_shell.dart';
+import 'screens/auth_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +25,7 @@ class BetterTrackApp extends StatelessWidget {
       title: 'BetterTrack AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const HomeShell(),
+      home: const AuthGate(),
     );
   }
 }

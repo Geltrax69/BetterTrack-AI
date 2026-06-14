@@ -14,6 +14,28 @@ class Repository {
   List<Map<String, dynamic>> _list(dynamic raw) =>
       (raw as List).cast<Map<String, dynamic>>();
 
+  // ── Auth ── returns {token, name, email}
+  Future<Map<String, dynamic>> signup(
+      {required String name, required String email, required String password}) async {
+    final raw = await _api.post('/auth/signup',
+        body: {'name': name, 'email': email, 'password': password});
+    return raw as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> login(
+      {required String email, required String password}) async {
+    final raw = await _api
+        .post('/auth/login', body: {'email': email, 'password': password});
+    return raw as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> googleLogin(
+      {required String email, required String name}) async {
+    final raw = await _api
+        .post('/auth/google', body: {'email': email, 'name': name});
+    return raw as Map<String, dynamic>;
+  }
+
   Future<Summary> summary() async =>
       Summary.fromJson(await _api.get('/summary') as Map<String, dynamic>);
 
@@ -70,8 +92,10 @@ class Repository {
   }
 
   Future<String> aiChat(String message, {String? groupId}) async {
+    // The model can take a while; give it room before timing out.
     final raw = await _api.post('/ai/chat',
-        body: {'message': message, 'group_id': groupId});
+        body: {'message': message, 'group_id': groupId},
+        timeout: const Duration(seconds: 60));
     return (raw as Map<String, dynamic>)['reply'] as String? ?? '';
   }
 }

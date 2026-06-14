@@ -33,19 +33,22 @@ class ApiClient {
 
   Uri _uri(String path) => Uri.parse('${ApiConfig.baseUrl}$path');
 
-  Future<dynamic> get(String path) => _send(() => _client.get(_uri(path)));
+  Future<dynamic> get(String path, {Duration? timeout}) =>
+      _send(() => _client.get(_uri(path)), timeout: timeout);
 
-  Future<dynamic> post(String path, {Object? body}) => _send(
+  Future<dynamic> post(String path, {Object? body, Duration? timeout}) => _send(
         () => _client.post(
           _uri(path),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(body ?? {}),
         ),
+        timeout: timeout,
       );
 
-  Future<dynamic> _send(Future<http.Response> Function() run) async {
+  Future<dynamic> _send(Future<http.Response> Function() run,
+      {Duration? timeout}) async {
     try {
-      final res = await run().timeout(ApiConfig.timeout);
+      final res = await run().timeout(timeout ?? ApiConfig.timeout);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         return res.body.isEmpty ? null : jsonDecode(res.body);
       }

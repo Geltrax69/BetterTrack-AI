@@ -14,6 +14,23 @@ class AppSettings extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
   }
 
+  // ── Auth ──
+  String? get token => _prefs?.getString('token');
+  bool get isLoggedIn => (token ?? '').isNotEmpty;
+
+  Future<void> signIn(
+      {required String token, required String name, required String email}) async {
+    await _prefs?.setString('token', token);
+    await _prefs?.setString('name', name);
+    await _prefs?.setString('email', email);
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    await _prefs?.remove('token');
+    notifyListeners();
+  }
+
   // ── Profile ──
   String get name => _prefs?.getString('name') ?? 'Sam Mehta';
   String get email => _prefs?.getString('email') ?? 'sam@bettertrack.ai';

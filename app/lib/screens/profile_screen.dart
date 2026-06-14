@@ -3,7 +3,6 @@ import '../services/settings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../widgets/async_view.dart';
 import 'settings_screens.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -36,8 +35,8 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed == true && context.mounted) {
-      showSuccess(context, 'Logged out');
+    if (confirmed == true) {
+      await AppSettings.instance.logout(); // AuthGate returns to the login screen
     }
   }
 
