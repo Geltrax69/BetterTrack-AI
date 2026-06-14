@@ -13,16 +13,20 @@ from ..models.schemas import (
     ActivityItem,
     AiChatRequest,
     AiChatResponse,
+    AuthResponse,
     Budget,
     Expense,
     ExpenseCreate,
+    GoogleAuthRequest,
     Group,
     GroupCreate,
     GroupJoin,
+    LoginRequest,
     OcrResult,
+    SignupRequest,
     Summary,
 )
-from ..services import ai_service, obsidian_sync, ocr_service
+from ..services import ai_service, auth_service, obsidian_sync, ocr_service
 
 router = APIRouter()
 
@@ -77,6 +81,22 @@ def health() -> dict:
         "ocr_provider": s.ocr_provider,
         "obsidian_key_set": bool(s.obsidian_api_key),
     }
+
+
+# ── Auth ──
+@router.post("/auth/signup", response_model=AuthResponse)
+def signup(payload: SignupRequest) -> AuthResponse:
+    return auth_service.signup(payload.name, payload.email, payload.password)
+
+
+@router.post("/auth/login", response_model=AuthResponse)
+def login(payload: LoginRequest) -> AuthResponse:
+    return auth_service.login(payload.email, payload.password)
+
+
+@router.post("/auth/google", response_model=AuthResponse)
+def google_auth(payload: GoogleAuthRequest) -> AuthResponse:
+    return auth_service.google(payload.email, payload.name)
 
 
 # ── Dashboard summary ──

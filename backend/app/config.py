@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     obsidian_api_key: str = ""
     obsidian_vault_path: str = ""
 
+    # Firebase / Google (from google-services.json)
+    firebase_project_id: str = ""
+    firebase_api_key: str = ""
+    google_oauth_web_client_id: str = ""
+
     secret_key: str = ""
 
     @property

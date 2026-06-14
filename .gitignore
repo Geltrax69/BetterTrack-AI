@@ -44,3 +44,6 @@ app/android/key.properties
 
 # Remember plugin session buffer (local only)
 .remember/
+
+# Firebase config (values are in backend/.env)
+google-services*.json
