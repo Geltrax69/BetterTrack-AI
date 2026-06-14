@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 600" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="940" height="600" fill="#FFFFFF"/>
+  <text x="470" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#111111">BetterTrack AI — data model &amp; relations</text>
+  <text x="470" y="58" text-anchor="middle" font-size="12" fill="#6E6E73">how the settle-up tables connect (see SCOPE.md)</text>
+
+  <!-- relationship lines (drawn first, under the boxes) -->
+  <g stroke="#8EA1FF" stroke-width="2" fill="none">
+    <path d="M250 150 H360"/>            <!-- members → expenses.paid_by -->
+    <path d="M470 210 V300"/>            <!-- expenses → expense_shares -->
+    <path d="M180 195 V330 H360"/>       <!-- members → expense_shares.member_id -->
+    <path d="M580 150 H760"/>            <!-- expenses.currency → fx_rates -->
+    <path d="M250 120 C320 90 700 90 760 130"/> <!-- members → settlements (curve top) -->
+    <path d="M180 195 V470 H360"/>       <!-- members → anomalies? (none) -->
+  </g>
+  <g font-size="10.5" fill="#6E6E73">
+    <text x="300" y="142">paid_by</text>
+    <text x="478" y="262">expense_id</text>
+    <text x="300" y="322">member_id</text>
+    <text x="640" y="142">currency</text>
+    <text x="500" y="92">from / to</text>
+  </g>
+
+  <!-- members -->
+  <g>
+    <rect x="60" y="100" width="190" height="110" rx="14" fill="#A8B9FF"/>
+    <text x="76" y="126" font-size="14" font-weight="700" fill="#111111">members</text>
+    <line x1="60" y1="136" x2="250" y2="136" stroke="#FFFFFF" stroke-width="1.5"/>
+    <text x="76" y="156" font-size="11.5" fill="#111111">id · name</text>
+    <text x="76" y="176" font-size="11.5" fill="#111111">joined_at · left_at</text>
+    <text x="76" y="196" font-size="11" fill="#3a3a3a">(membership window)</text>
+  </g>
+
+  <!-- expenses -->
+  <g>
+    <rect x="360" y="100" width="220" height="110" rx="14" fill="#F7F8FC" stroke="#ECEEF5"/>
+    <text x="376" y="126" font-size="14" font-weight="700" fill="#111111">expenses</text>
+    <line x1="360" y1="136" x2="580" y2="136" stroke="#ECEEF5" stroke-width="1.5"/>
+    <text x="376" y="156" font-size="11.5" fill="#111111">id · date · description</text>
+    <text x="376" y="176" font-size="11.5" fill="#111111">paid_by · amount_inr</text>
+    <text x="376" y="196" font-size="11.5" fill="#111111">currency · split_type · status</text>
+  </g>
+
+  <!-- fx_rates -->
+  <g>
+    <rect x="760" y="100" width="160" height="80" rx="14" fill="#F7F8FC" stroke="#ECEEF5"/>
+    <text x="776" y="126" font-size="14" font-weight="700" fill="#111111">fx_rates</text>
+    <line x1="760" y1="136" x2="920" y2="136" stroke="#ECEEF5" stroke-width="1.5"/>
+    <text x="776" y="156" font-size="11.5" fill="#111111">currency · rate_to_inr</text>
+    <text x="776" y="173" font-size="11.5" fill="#111111">as_of</text>
+  </g>
+
+  <!-- settlements -->
+  <g>
+    <rect x="760" y="210" width="160" height="86" rx="14" fill="#F7F8FC" stroke="#ECEEF5"/>
+    <text x="776" y="236" font-size="14" font-weight="700" fill="#111111">settlements</text>
+    <line x1="760" y1="246" x2="920" y2="246" stroke="#ECEEF5" stroke-width="1.5"/>
+    <text x="776" y="266" font-size="11.5" fill="#111111">id · date · amount_inr</text>
+    <text x="776" y="284" font-size="11.5" fill="#111111">from_member · to_member</text>
+  </g>
+
+  <!-- expense_shares (junction) -->
+  <g>
+    <rect x="360" y="300" width="220" height="96" rx="14" fill="#B7C3FF"/>
+    <text x="376" y="326" font-size="14" font-weight="700" fill="#111111">expense_shares</text>
+    <line x1="360" y1="336" x2="580" y2="336" stroke="#FFFFFF" stroke-width="1.5"/>
+    <text x="376" y="356" font-size="11.5" fill="#111111">expense_id · member_id</text>
+    <text x="376" y="376" font-size="11.5" fill="#111111">share_inr</text>
+  </g>
+
+  <!-- anomalies -->
+  <g>
+    <rect x="360" y="440" width="240" height="100" rx="14" fill="#F7F8FC" stroke="#ECEEF5"/>
+    <text x="376" y="466" font-size="14" font-weight="700" fill="#111111">anomalies</text>
+    <line x1="360" y1="476" x2="600" y2="476" stroke="#ECEEF5" stroke-width="1.5"/>
+    <text x="376" y="496" font-size="11.5" fill="#111111">id · row · kind · detail</text>
+    <text x="376" y="516" font-size="11.5" fill="#111111">action · needs_approval · status</text>
+  </g>
+
+  <!-- invariant note -->
+  <g>
+    <rect x="60" y="300" width="250" height="96" rx="14" fill="#EEF2FF"/>
+    <text x="76" y="326" font-size="12.5" font-weight="700" fill="#111111">invariant</text>
+    <text x="76" y="348" font-size="11.5" fill="#111111">Σ expense_shares.share_inr</text>
+    <text x="76" y="366" font-size="11.5" fill="#111111">= expenses.amount_inr</text>
+    <text x="76" y="386" font-size="11.5" fill="#111111">Σ member balances = ₹0</text>
+  </g>
+</svg>
