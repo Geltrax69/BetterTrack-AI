@@ -41,3 +41,6 @@ app/android/key.properties
 # ── macOS / editors ──
 .DS_Store
 *.swp
+
+# Remember plugin session buffer (local only)
+.remember/

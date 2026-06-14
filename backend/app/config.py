@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
 
     # AI
+    ai_provider: str = "gemini"  # gemini | anthropic
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-flash-latest"
     anthropic_api_key: str = ""
     ai_model: str = "claude-fable-5"
 
@@ -38,6 +41,8 @@ class Settings(BaseSettings):
 
     @property
     def ai_ready(self) -> bool:
+        if self.ai_provider == "gemini":
+            return bool(self.gemini_api_key)
         return bool(self.anthropic_api_key)
 
 
