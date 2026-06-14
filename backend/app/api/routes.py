@@ -6,7 +6,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from ..config import get_settings
 from ..models.schemas import (
@@ -18,6 +18,7 @@ from ..models.schemas import (
     ExpenseCreate,
     Group,
     GroupCreate,
+    GroupJoin,
     OcrResult,
     Summary,
 )
@@ -25,14 +26,24 @@ from ..services import ai_service, obsidian_sync, ocr_service
 
 router = APIRouter()
 
+# Unambiguous alphabet (no 0/O/1/I) for human-friendly join codes.
+_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def _new_code(n: int = 6) -> str:
+    import secrets
+
+    return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(n))
+
+
 # ── Sample in-memory stores ──
 _GROUPS: list[Group] = [
     Group(id="g1", name="Goa Trip", member_count=5, outstanding=6200,
-          last_activity="Dinner at Olive · 2h ago"),
+          last_activity="Dinner at Olive · 2h ago", code="GOA123"),
     Group(id="g2", name="Flat 402", member_count=3, outstanding=-1800,
-          last_activity="Electricity bill · 1d ago"),
+          last_activity="Electricity bill · 1d ago", code="FLAT42"),
     Group(id="g3", name="Office Lunch", member_count=8, outstanding=0,
-          last_activity="All settled up · 3d ago"),
+          last_activity="All settled up · 3d ago", code="LUNCH8"),
 ]
 _EXPENSES: list[Expense] = [
     Expense(id="e1", name="Dinner at Olive", category="food", amount=2400,
@@ -87,6 +98,14 @@ def list_groups() -> list[Group]:
     return _GROUPS
 
 
+def _unique_code() -> str:
+    existing = {g.code for g in _GROUPS}
+    code = _new_code()
+    while code in existing:
+        code = _new_code()
+    return code
+
+
 @router.post("/groups", response_model=Group)
 def create_group(payload: GroupCreate) -> Group:
     members = [m.strip() for m in payload.members if m.strip()]
@@ -97,6 +116,7 @@ def create_group(payload: GroupCreate) -> Group:
         currency=payload.currency or "₹",
         outstanding=0.0,
         last_activity="Group created · just now",
+        code=_unique_code(),
     )
     _GROUPS.insert(0, group)
     _ACTIVITY.insert(
@@ -110,10 +130,47 @@ def create_group(payload: GroupCreate) -> Group:
     )
     obsidian_sync.write_note(
         f"Group created — {group.name}",
-        f"- Members: {', '.join(members) or '—'}\n- Currency: {group.currency}",
+        f"- Members: {', '.join(members) or '—'}\n- Currency: {group.currency}\n"
+        f"- Code: {group.code}",
         tags=["bettertrack", "group"],
     )
     return group
+
+
+@router.get("/groups/{code}", response_model=Group)
+def get_group_by_code(code: str) -> Group:
+    code = code.strip().upper()
+    for g in _GROUPS:
+        if g.code == code:
+            return g
+    raise HTTPException(status_code=404, detail="No group found for that code.")
+
+
+@router.post("/groups/join", response_model=Group)
+def join_group(payload: GroupJoin) -> Group:
+    code = payload.code.strip().upper()
+    for g in _GROUPS:
+        if g.code == code:
+            g.member_count += 1
+            g.last_activity = f"{payload.member_name} joined · just now"
+            _ACTIVITY.insert(
+                0,
+                ActivityItem(
+                    type="settlement",
+                    title=f"{payload.member_name} joined {g.name}",
+                    subtitle=f"Now {g.member_count} members",
+                    time="now",
+                ),
+            )
+            obsidian_sync.write_note(
+                f"Member joined — {g.name}",
+                f"- {payload.member_name} joined via code {code}",
+                tags=["bettertrack", "group"],
+            )
+            return g
+    raise HTTPException(
+        status_code=404, detail="That group code doesn't exist. Check and try again."
+    )
 
 
 # ── Expenses ──

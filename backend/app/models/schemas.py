@@ -11,12 +11,18 @@ class Group(BaseModel):
     currency: str = "₹"
     outstanding: float = 0.0
     last_activity: str = ""
+    code: str = ""  # short shareable join code
 
 
 class GroupCreate(BaseModel):
     name: str = Field(min_length=1)
     members: list[str] = []
     currency: str = "₹"
+
+
+class GroupJoin(BaseModel):
+    code: str = Field(min_length=1)
+    member_name: str = "You"
 
 
 class Expense(BaseModel):
